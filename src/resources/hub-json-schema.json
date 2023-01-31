@@ -1,0 +1,88 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+      "hub_id": {
+        "type": "string"
+      },
+      "hub_rating": {
+        "type": "number"
+      },
+      "hub_photo": {
+        "type": "string"
+      },
+      "hub_name": {
+        "type": "string"
+      },
+      "hub_description": {
+        "type": "string"
+      },
+      "hub_category": {
+        "type": "string"
+      },
+      "hub_cost_for_two": {
+        "type": "number"
+      },
+      "hub_locations": {
+        "type": "array",
+        "items": [
+          {
+            "type": "object",
+            "properties": {
+              "hub_address": {
+                "type": "string"
+              },
+              "hub_latitude": {
+                "type": "number"
+              },
+              "hub_logitude": {
+                "type": "number"
+              },
+              "hub_phone_number": {
+                "type": "integer"
+              },
+              "hub_days_of_operation": {
+                "type": "array",
+                "items": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "hub_start_time": {
+                "type": "string"
+              },
+              "hub_end_time": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "hub_address",
+              "hub_latitude",
+              "hub_logitude",
+              "hub_phone_number",
+              "hub_days_of_operation",
+              "hub_start_time",
+              "hub_end_time"
+            ]
+          }
+        ]
+      }
+    },
+    "required": [
+      "hub_id",
+      "hub_rating",
+      "hub_photo",
+      "hub_name",
+      "hub_description",
+      "hub_category",
+      "hub_cost_for_two",
+      "hub_locations"
+    ]
+  }

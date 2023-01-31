@@ -1,0 +1,146 @@
+# This is the SAM template that represents the architecture of your serverless application
+# https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-template-basics.html
+
+# The AWSTemplateFormatVersion identifies the capabilities of the template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  hawker_hub_backend
+
+# Transform section specifies one or more macros that AWS CloudFormation uses to process your template
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html
+Transform:
+- AWS::Serverless-2016-10-31
+
+# Resources declares the AWS resources that you want to include in the stack
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
+Resources:
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+
+  # Hawker Hub backend APIs 
+  getAllHubsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/get-all-hubs.getAllHubsHandler
+      Runtime: nodejs16.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: Function to get all hubs from DynamoDB.
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the HubsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref HubsTable
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          HUBS_TABLE_NAME: !Ref HubsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /hub
+            Method: GET
+
+  getHubByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/get-hub-by-id.getHubByIdHandler
+      Runtime: nodejs16.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: Function to get a hub by ID from DynamoDB.
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the HubsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref HubsTable
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          HUBS_TABLE_NAME: !Ref HubsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /hub/{hub_id}
+            Method: GET
+
+  insertHubFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/insert-hub.insertHubHandler
+      Runtime: nodejs16.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: Function to insert one hub to a DynamoDB table.
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the HubsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref HubsTable
+        - S3CrudPolicy:
+            BucketName: hubs-image
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          HUBS_TABLE_NAME: !Ref HubsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /hub
+            Method: POST
+    
+  updateHubFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/insert-hub.insertHubHandler
+      Runtime: nodejs16.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: Function to update one hub to a DynamoDB table.
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the HubsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref HubsTable
+        - S3CrudPolicy:
+            BucketName: hubs-image
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          HUBS_TABLE_NAME: !Ref HubsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /hub
+            Method: PUT
+
+  # DynamoDb table to store Hub details
+  HubsTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: hub_id
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+  
+  HubsImageBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: hubs-image
+        AccessControl: PublicRead
+
+Outputs:
+  WebEndpoint:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
