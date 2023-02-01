@@ -15,17 +15,17 @@ const tableName = process.env.HUBS_TABLE_NAME;
 
 // TODO: Update all responses to JSONs
 /**
- * A HTTP get method to insert a hub to a DynamoDB table.
+ * A HTTP get method to update a hub to a DynamoDB table.
  */
-exports.insertHubHandler = async (event) => {
+exports.updateHubHandler = async (event) => {
   // All log statements are written to CloudWatch
   console.info("received:", event);
 
   let response = {};
 
-  if (event.httpMethod !== "POST") {
+  if (event.httpMethod !== "PUT") {
     console.error(
-      `insertHubHandler only accept POST method, you tried: ${event.httpMethod}`
+      `updateHubHandler only accept PUT method, you tried: ${event.httpMethod}`
     );
     return {
       statusCode: 405,
@@ -43,11 +43,13 @@ exports.insertHubHandler = async (event) => {
 	let hubPhoto = Buffer.from(parsedEvent.files[0].content); 
 	let hubPhotoType = parsedEvent.files[0].contentType;
 	let hubPhotoFileName = parsedEvent.files[0].filename;
-  
-  var fileExt = hubPhotoFileName.split('.').pop();
-  hubPhotoFileName = hubDetails.hub_id + "." + fileExt;
+	
+    
+    var fileExt = hubPhotoFileName.split('.').pop();
+    hubPhotoFileName = hubDetails.hub_id + "." + fileExt;
 
-  console.info("Hub Photo", hubPhoto, hubPhotoFileName);
+    console.info("Hub Photo", hubPhoto, hubPhotoFileName);
+
 	const params = {
 		Bucket: HUBS_IMAGE_BUCKET,
 		Key: hubPhotoFileName,

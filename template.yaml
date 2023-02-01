@@ -99,7 +99,7 @@ Resources:
   updateHubFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/insert-hub.insertHubHandler
+      Handler: src/handlers/update-hub.updateHubHandler
       Runtime: nodejs16.x
       Architectures:
         - x86_64
@@ -122,7 +122,32 @@ Resources:
           Properties:
             Path: /hub
             Method: PUT
-
+  deleteHubByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/delete-hub-by-id.deleteHubByIdHandler
+      Runtime: nodejs16.x
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: Function to delete a hub by ID from DynamoDB.
+      Policies:
+        # Give Create/Read/Update/Delete Permissions to the HubsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref HubsTable
+        - S3CrudPolicy:
+            BucketName: hubs-image
+      Environment:
+        Variables:
+          # Make table name accessible as environment variable from function code during execution
+          HUBS_TABLE_NAME: !Ref HubsTable
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /hub/{hub_id}
+            Method: DELETE
   # DynamoDb table to store Hub details
   HubsTable:
     Type: AWS::Serverless::SimpleTable

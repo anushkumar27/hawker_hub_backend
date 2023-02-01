@@ -7,13 +7,18 @@ const tableName = process.env.HUBS_TABLE_NAME;
 const dynamodb = require("aws-sdk/clients/dynamodb");
 const docClient = new dynamodb.DocumentClient();
 
+// Create a S3  client
+const AWS = require("aws-sdk");
+const s3Client = new AWS.S3();
+const HUBS_IMAGE_BUCKET = "hubs-image";
+
 /**
- * A HTTP get method to get a hub by id from a DynamoDB table.
+ * A HTTP delete method to delete a hub from a DynamoDB table.
  */
-exports.getHubByIdHandler = async (event) => {
-  if (event.httpMethod !== "GET") {
+exports.deleteHubByIdHandler = async (event) => {
+  if (event.httpMethod !== "DELETE") {
     console.error(
-      `getHubByIdHandler only accept GET method, you tried: ${event.httpMethod}`
+      `deleteHubByIdHandler only accept DELETE method, you tried: ${event.httpMethod}`
     );
     response = {
       statusCode: 405,
@@ -46,12 +51,19 @@ exports.getHubByIdHandler = async (event) => {
       TableName: tableName,
       Key: { hub_id: hub_id },
     };
-    const data = await docClient.get(params).promise();
-    const item = data.Item;
+    
+    await docClient.delete(params).promise();
 
+    const s3params = {
+      Bucket: HUBS_IMAGE_BUCKET,
+      Key: hub_id + ".jpg"
+    };
+    console.log("S3 Params: ", s3params);
+    var s3Response = await s3Client.deleteObject(s3params).promise();
+    console.log("Response from S3: ", s3Response);
     response = {
       statusCode: 200,
-      body: JSON.stringify(item),
+      body: JSON.stringify({"status" : "SUCCESS", "message":"Hub successfully deleted"}),
     };
   } catch (Exception) {
     console.error("Exception: ", Exception);
