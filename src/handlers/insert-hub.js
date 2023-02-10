@@ -7,13 +7,13 @@ const docClient = new dynamodb.DocumentClient();
 
 // Create a S3  client
 const AWS = require("aws-sdk");
+const { ERROR_METHOD_NOT_ALLOWED, ERROR_RESOURCE_NOT_FOUND, ERROR_S3_INSERTION_FAILED } = require('../resources/constants');
 const s3Client = new AWS.S3();
 const HUBS_IMAGE_BUCKET = "hubs-image";
 
 // Get the DynamoDB table name from environment variables
 const tableName = process.env.HUBS_TABLE_NAME;
 
-// TODO: Update all responses to JSONs
 /**
  * A HTTP get method to insert a hub to a DynamoDB table.
  */
@@ -29,7 +29,7 @@ exports.insertHubHandler = async (event) => {
     );
     return {
       statusCode: 405,
-      body: "HTTP Method Not Allowed",
+      body: ERROR_METHOD_NOT_ALLOWED,
     };
   }
 
@@ -39,7 +39,14 @@ exports.insertHubHandler = async (event) => {
 
 	// JSON Parse Data
 	let hubDetails = JSON.parse(parsedEvent.hubDetails);
-
+  
+  if(parsedEvent.files == undefined || parsedEvent.files == null || parsedEvent.files.length == 0){
+    return response = {
+      statusCode: 400,
+      body: ERROR_HUB_PHOTO_MISSING,
+    };
+  }
+  
 	let hubPhoto = Buffer.from(parsedEvent.files[0].content); 
 	let hubPhotoType = parsedEvent.files[0].contentType;
 	let hubPhotoFileName = parsedEvent.files[0].filename;
@@ -78,14 +85,14 @@ exports.insertHubHandler = async (event) => {
       console.error("Exception: ", err);
       response = {
         statusCode: 404,
-        body: "Unable to call DynamoDB. Table resource not found.",
+        body: ERROR_RESOURCE_NOT_FOUND,
       };
     }
   } catch (err) {
     console.error("Exception: ", err);
     response = {
       statusCode: 500,
-      body: "Unable to insert image to S3",
+      body: ERROR_S3_INSERTION_FAILED,
     };
   }
 

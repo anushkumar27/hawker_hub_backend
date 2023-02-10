@@ -1,4 +1,4 @@
-const parser = require('lambda-multipart-parser');
+const parser = require("lambda-multipart-parser");
 // Create clients and set shared const values outside of the handler.
 
 // Create a DocumentClient that represents the query to add an item
@@ -10,10 +10,34 @@ const AWS = require("aws-sdk");
 const s3Client = new AWS.S3();
 const HUBS_IMAGE_BUCKET = "hubs-image";
 
+const {
+  ERROR_METHOD_NOT_ALLOWED,
+  ERROR_RESOURCE_NOT_FOUND,
+  ERROR_S3_INSERTION_FAILED,
+  ERROR_HUB_PHOTO_MISSING,
+} = require("../resources/constants");
+
 // Get the DynamoDB table name from environment variables
 const tableName = process.env.HUBS_TABLE_NAME;
 
-// TODO: Update all responses to JSONs
+function roundToNearestHalf(num) {
+  return Math.round(num * 2) / 2;
+}
+
+async function getHubDetails(hubId) {
+  const params = {
+    TableName: tableName,
+    Key: { hub_id: hubId },
+  };
+  const data = await docClient.get(params).promise();
+
+  if (data.Item !== undefined && data.Item !== null) {
+    return data.Item;
+  }else{
+    throw new Error(`Item with key: ${hubId} not found`);
+  }
+}
+
 /**
  * A HTTP get method to update a hub to a DynamoDB table.
  */
@@ -29,49 +53,69 @@ exports.updateHubHandler = async (event) => {
     );
     return {
       statusCode: 405,
-      body: "HTTP Method Not Allowed",
+      body: ERROR_METHOD_NOT_ALLOWED,
     };
   }
 
   try {
-	const parsedEvent = await parser.parse(event);
-	console.info(parsedEvent);
+    const parsedEvent = await parser.parse(event);
+    console.info(parsedEvent);
 
-	// JSON Parse Data
-	let hubDetails = JSON.parse(parsedEvent.hubDetails);
+    // JSON Parse Data
+    let hubDetails = JSON.parse(parsedEvent.hubDetails);
 
-	let hubPhoto = Buffer.from(parsedEvent.files[0].content); 
-	let hubPhotoType = parsedEvent.files[0].contentType;
-	let hubPhotoFileName = parsedEvent.files[0].filename;
-	
+    // Get details of the hub from dynamo db
+    try {
+      let oldHubDetails = await getHubDetails(hubDetails.hub_id);
+      hubDetails.hub_rating = roundToNearestHalf(
+        (oldHubDetails.hub_rating + hubDetails.hub_rating) / 2
+      );
+    } catch (err) {
+      console.error("Exception: ", err);
+      return response = {
+        statusCode: 404,
+        body: ERROR_RESOURCE_NOT_FOUND,
+      };
+    }
     
-    var fileExt = hubPhotoFileName.split('.').pop();
+    if(parsedEvent.files == undefined || parsedEvent.files == null || parsedEvent.files.length == 0){
+      return response = {
+        statusCode: 400,
+        body: ERROR_HUB_PHOTO_MISSING,
+      };
+    }
+
+    let hubPhoto = Buffer.from(parsedEvent.files[0].content);
+    let hubPhotoType = parsedEvent.files[0].contentType;
+    let hubPhotoFileName = parsedEvent.files[0].filename;
+
+    var fileExt = hubPhotoFileName.split(".").pop();
     hubPhotoFileName = hubDetails.hub_id + "." + fileExt;
 
     console.info("Hub Photo", hubPhoto, hubPhotoFileName);
 
-	const params = {
-		Bucket: HUBS_IMAGE_BUCKET,
-		Key: hubPhotoFileName,
-		Body: hubPhoto,
-		ContentType: hubPhotoType,
-		ACL: "public-read"
-	};
+    const params = {
+      Bucket: HUBS_IMAGE_BUCKET,
+      Key: hubPhotoFileName,
+      Body: hubPhoto,
+      ContentType: hubPhotoType,
+      ACL: "public-read",
+    };
 
-	await s3Client.upload(params).promise();
+    await s3Client.upload(params).promise();
 
     // Insert data to DynamoDB
     try {
       // Update hub photo URL
       hubDetails.hub_photo = `https://${HUBS_IMAGE_BUCKET}.s3.amazonaws.com/${hubPhotoFileName}`;
-		console.log("Hub Details DynamoDB: ", hubDetails);
-	  const params = {
+      console.log("Hub Details DynamoDB: ", hubDetails);
+      const params = {
         TableName: tableName,
         Item: hubDetails,
       };
 
       await docClient.put(params).promise();
-	  
+
       response = {
         statusCode: 200,
         body: JSON.stringify(hubDetails),
@@ -80,14 +124,14 @@ exports.updateHubHandler = async (event) => {
       console.error("Exception: ", err);
       response = {
         statusCode: 404,
-        body: "Unable to call DynamoDB. Table resource not found.",
+        body: ERROR_RESOURCE_NOT_FOUND,
       };
     }
   } catch (err) {
     console.error("Exception: ", err);
     response = {
       statusCode: 500,
-      body: "Unable to insert image to S3",
+      body: ERROR_S3_INSERTION_FAILED,
     };
   }
 

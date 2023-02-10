@@ -9,6 +9,7 @@ const docClient = new dynamodb.DocumentClient();
 
 // Create a S3  client
 const AWS = require("aws-sdk");
+const { ERROR_METHOD_NOT_ALLOWED, ERROR_INVALID_HUB_ID, SUCCESS_HUB_DELETED, ERROR_RESOURCE_NOT_FOUND } = require("../resources/constants");
 const s3Client = new AWS.S3();
 const HUBS_IMAGE_BUCKET = "hubs-image";
 
@@ -22,7 +23,7 @@ exports.deleteHubByIdHandler = async (event) => {
     );
     response = {
       statusCode: 405,
-      body: "HTTP Method Not Allowed",
+      body: ERROR_METHOD_NOT_ALLOWED,
     };
 
     return response;
@@ -41,7 +42,7 @@ exports.deleteHubByIdHandler = async (event) => {
   if(!hub_id){
     response = {
         statusCode: 400,
-        body: "Invalid hub_id provided",
+        body: ERROR_INVALID_HUB_ID,
       };
     return response;
   }
@@ -63,13 +64,13 @@ exports.deleteHubByIdHandler = async (event) => {
     console.log("Response from S3: ", s3Response);
     response = {
       statusCode: 200,
-      body: JSON.stringify({"status" : "SUCCESS", "message":"Hub successfully deleted"}),
+      body: SUCCESS_HUB_DELETED,
     };
   } catch (Exception) {
     console.error("Exception: ", Exception);
     response = {
       statusCode: 404,
-      body: "Unable to call DynamoDB. Table resource not found.",
+      body: ERROR_RESOURCE_NOT_FOUND,
     };
   }
 

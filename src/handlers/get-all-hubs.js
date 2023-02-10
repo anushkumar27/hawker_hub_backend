@@ -5,6 +5,7 @@ const tableName = process.env.HUBS_TABLE_NAME;
 
 // Create a DocumentClient that represents the query to add an item
 const dynamodb = require("aws-sdk/clients/dynamodb");
+const { ERROR_METHOD_NOT_ALLOWED, ERROR_RESOURCE_NOT_FOUND } = require("../resources/constants");
 const docClient = new dynamodb.DocumentClient();
 
 /**
@@ -17,7 +18,7 @@ exports.getAllHubsHandler = async (event) => {
     );
     response = {
       statusCode: 405,
-      body: "HTTP Method Not Allowed",
+      body: ERROR_METHOD_NOT_ALLOWED,
     };
 
     return response;
@@ -50,7 +51,7 @@ exports.getAllHubsHandler = async (event) => {
     console.error("Exception: ", Exception);
     response = {
       statusCode: 404,
-      body: "Unable to call DynamoDB. Table resource not found.",
+      body: ERROR_RESOURCE_NOT_FOUND,
     };
   }
 
