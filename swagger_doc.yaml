@@ -1,0 +1,236 @@
+openapi: 3.0.3
+info:
+  title: Hawker Hub Backend Services
+  description: |-
+    HawkerHub is a community driven location sharing platform. HawkerHub backend server implementes services that are used in the mobile application.
+    
+    Some useful links:
+    - [HawkerHub repository](https://github.com/anushkumar27/hawker_hub)
+    - [HawkerHub Mock Bankend repository](https://github.com/anushkumar27/hawker_hub_mock_backend)
+  contact:
+    email: sureshka@oregonstate.edu
+  version: 0.0.1
+servers:
+  - url: https://o7bd36fp29.execute-api.us-west-2.amazonaws.com/Prod/
+  - url: https://o7bd36fp29.execute-api.us-west-2.amazonaws.com/Stage/
+tags:
+  - name: hub
+    description: Everything about Hubs
+paths:
+  /hub:
+    get:
+      tags:
+        - hub
+      summary: Get all hubs
+      description: Returns a all the hubs
+      operationId: getAllHubs
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Hub'
+        '400':
+          description: Invalid ID supplied
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/ResponseError'
+    put:
+      tags:
+        - hub
+      summary: Update an existing hub
+      description: Update an existing hub
+      operationId: updateHub
+      requestBody:
+        description: Update an existing hub
+        content:
+          multipart/form-data: # Media type
+            schema:            # Request payload
+              type: object
+              properties:      # Request parts
+                hubDetails:            # Part 1 (JSON value)
+                  $ref: '#/components/schemas/Hub'
+                hubPhoto:         # Part 2 (an image)
+                  type: string
+                  format: binary
+              required: ["hubDetails", "hubPhoto"]
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hub'          
+        '400':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/ResponseError'
+    post:
+      tags:
+        - hub
+      summary: Add a new hub
+      description: Add a new hub
+      operationId: addHub
+      requestBody:
+        description: Create a new hub
+        content:
+          multipart/form-data: # Media type
+            schema:            # Request payload
+              type: object
+              properties:      # Request parts
+                hubDetails:            # Part 1 (JSON value)
+                  $ref: '#/components/schemas/Hub'
+                hubPhoto:         # Part 2 (an image)
+                  type: string
+                  format: binary
+              required: ["hubDetails", "hubPhoto"]
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hub'          
+        '400':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/ResponseError'
+  /hub/{hubId}:
+    get:
+      tags:
+        - hub
+      summary: Find hub by ID
+      description: Returns a single hub
+      operationId: getHubById
+      parameters:
+        - name: hubId
+          in: path
+          description: ID of hub to return
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hub'
+        '400':
+          description: Invalid ID supplied
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/ResponseError'
+    delete:
+      tags:
+        - hub
+      summary: Deletes a hub
+      description: delete a hub
+      operationId: deleteHub
+      parameters:
+        - name: hubId
+          in: path
+          description: Hub id to delete
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/ResponseSuccess'
+        '400':
+          description: Invalid ID supplied
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/ResponseError'
+                
+components:
+  schemas:
+    ResponseSuccess:
+      type: object
+      properties:
+          status:
+              type: string
+              example: SUCCESS
+          message:
+              type: string
+              example: Description of the success message
+    ResponseError:
+      type: object
+      properties:
+          status:
+              type: string
+              example: ERROR
+          message:
+              type: string
+              example: Description of the error message
+    Hub:
+      type: object
+      properties:
+        hub_id:
+          type: string
+          example: 7028e7a4-7332-11ed-a1eb-0242ac120002
+        hub_rating:
+          type: number
+          example: 3.5
+        hub_photo:
+          type: string
+          example: http://s3.amazonaws.com/bucket/
+        hub_name:
+          type: string
+          example: Desi PDX
+        hub_description:
+          type: string
+          example: DesiPDX is a food cart located on Portland's bustling N. Mississippi Avenue serving food inspired by Indian spices and flavors
+        hub_category:
+          type: string
+          example: Food Truck
+        hub_cost_for_two:
+          type: integer
+          example: 100
+        hub_locations:
+          type: array
+          items:
+            $ref: "#/components/schemas/HubLocation"
+        
+    HubLocation:
+      type: object
+      properties:
+        hub_address:
+          type: string
+          example: 4233 N Mississippi Ave, Portland, OR 97217
+        hub_latitude:
+          type: number
+          example: 45.5152
+        hub_logitude:
+          type: number
+          example: 122.6784
+        hub_phone_number:
+          type: number
+          example: 5038623374
+        hub_days_of_operation:
+          type: array
+          items: 
+            type: string
+          example: ["Monday", "Tuesday", "Wednesday"]
+        hub_start_time:
+          type: string
+          format: time
+          example:  11:00
+        hub_end_time:
+          type: string
+          format: time
+          example: 17:00
